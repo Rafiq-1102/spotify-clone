@@ -19,18 +19,8 @@ function secondsToMinutesSeconds(seconds) {
 
 async function getSongs(folder) {
   currFolder = folder;
-  let a = await fetch(`http://127.0.0.1:5500/${folder}/`);
-  let response = await a.text();
-  let div = document.createElement("div");
-  div.innerHTML = response;
-  let as = div.getElementsByTagName("a");
-  songs = [];
-  for (let index = 0; index < as.length; index++) {
-    const element = as[index];
-    if (element.href.endsWith(".mp3")) {
-      songs.push(element.href.split(`/${folder}/`)[1]);
-    }
-  }
+  const response = await fetch(`${folder}/songs.json`);
+  songs = await response.json();
 
   // Show all the songs in the playlist
   let songUL = document
@@ -58,7 +48,7 @@ async function getSongs(folder) {
   Array.from(
     document.querySelector(".songList").getElementsByTagName("li"),
   ).forEach((e, index) => {
-    e.addEventListener("click", (element) => {
+    e.addEventListener("click", () => {
       playMusic(songs[index]);
     });
   });
@@ -67,7 +57,7 @@ async function getSongs(folder) {
 }
 
 const playMusic = (track, pause = false) => {
-  currentSong.src = `/${currFolder}/` + track;
+  currentSong.src = `${currFolder}/${track}`;
   if (!pause) {
     currentSong.play();
     play.src ="img/pause.svg";
@@ -82,44 +72,27 @@ const playMusic = (track, pause = false) => {
 };
 
 async function displayAlbums() {
-  let a = await fetch(`http://127.0.0.1:5500/songs/`);
-  let response = await a.text();
-  let div = document.createElement("div");
-  div.innerHTML = response;
-  let anchors = div.getElementsByTagName("a");
-  let cardContainer = document.querySelector(".cardContainer");
-  let array = Array.from(anchors);
+  const albumsResponse = await fetch("songs/albums.json");
+  const albums = await albumsResponse.json();
+  const cardContainer = document.querySelector(".cardContainer");
 
-  for (let index = 0; index < array.length; index++) {
-    const e = array[index];
-
-    if (e.href.includes("/songs")) {
-      let cleanHref = e.href.endsWith("/") ? e.href.slice(0, -1) : e.href;
-      let folder = cleanHref.split("/").slice(-1)[0];
-
-      if (folder !== "songs" && !folder.includes(".htaccess")) {
-        // Get the metadata of the folder
-        let a = await fetch(`http://127.0.0.1:5500/songs/${folder}/info.json`);
-        let response = await a.json();
-        console.log(response);
-        console.log(folder);
-        cardContainer.innerHTML =
-          cardContainer.innerHTML +
-          `<div data-folder="${folder}" class="card">
-                        <div class="play">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M5 20V4L19 12L5 20Z" stroke="#141B34" stroke-width="1.5" stroke-linejoin="round" />
-                            </svg>
-                        </div>
-                        <img src="/songs/${folder}/cover.jpg" alt="">
-                        <h2>${response.title}</h2>
-                        <p>${response.description}</p>
-                    </div>`;
-      }
-    }
+  for (const folder of albums) {
+    const response = await fetch(`songs/${folder}/info.json`);
+    const metadata = await response.json();
+    cardContainer.innerHTML +=
+      `<div data-folder="${folder}" class="card">
+                    <div class="play">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 20V4L19 12L5 20Z" stroke="#141B34" stroke-width="1.5" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <img src="songs/${folder}/cover.jpg" alt="">
+                    <h2>${metadata.title}</h2>
+                    <p>${metadata.description}</p>
+                </div>`;
   }
 
-  // Load the playlist whenever card is clicked
+  // Load the playlist whenever a card is clicked
   Array.from(document.getElementsByClassName("card")).forEach((e) => {
     e.addEventListener("click", async (item) => {
       songs = await getSongs(`songs/${item.currentTarget.dataset.folder}`);
@@ -127,6 +100,7 @@ async function displayAlbums() {
     });
   });
 }
+
 async function main() {
   // Get The list of all songs
   songs = await getSongs("songs/ncs");
