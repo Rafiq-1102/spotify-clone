@@ -89,12 +89,12 @@ body {
 .header > * {
   padding: 20px;
 }
-.spotifyPlaylists {
+.musicPlaylists {
   padding: 16px;
   max-height: 90vh;
   overflow-y: auto;
 }
-.spotifyPlaylists h1 {
+.musicPlaylists h1 {
   padding: 4px;
   
 
